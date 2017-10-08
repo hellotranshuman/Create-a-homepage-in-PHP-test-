@@ -109,24 +109,15 @@ if(isset($_SESSION['loginState'])){
 // 현재 페이지 번호, listPage.php에서 다른 페이지로 이동할 경우 -> 현재 페이지 번호, 그 이외 -> 첫페이지
 if(isset($_POST['nowPageNum'])){
     $nowPageNum = $_POST['nowPageNum'];
-
-    echo "nowPageNum if : $nowPageNum<br>";
 } else{
     $nowPageNum = 1;
-
-    echo "nowPageNum else : $nowPageNum<br>";
 }
 
 // 화면에 출력할 글의 수, (5, 10(기본값), 15, 20) listPage.php에서 이동했을 경우 -> 현재 출력 개수, 그 이외 -> 10(기본값),
 if(isset($_POST['prtContentsNum'])){
     $prtContentsNum = $_POST['prtContentsNum'];
-
-
-    echo "prtContentsNum if : $prtContentsNum";
 } else{
     $prtContentsNum = 10;
-
-    echo "prtContentsNum else : $prtContentsNum";
 }
 
 // 검색조건 (제목 0(기본값), 내용 1, 제목+내용 2) (listPage.php에서 listPage.php로 이동하여 검색 조건에 맞게 페이지네이션)
@@ -157,9 +148,7 @@ if(isset($_POST['searchStr'])){
  * 1. DB에 접근하여 페이지 출력
  * 2. 페이지네이션 (일반상태, 검색상태, 글 출력개수 조절도 가능)
  * 3. 검색 구현
- *
  * */
-
 
 //MySQL 서버 주소
 define("HOST","localhost");
@@ -228,7 +217,7 @@ if($connect){
 
     // 수정을 하기 위해 writePage.php로 이동을 할때 값을 전송하기 위해 사용되는 form태그
     echo
-    "<form method='post' action='updateAndDeletePage.php' id='updateForm'>
+    "<form method='get' action='updateAndDeletePage.php' id='updateForm'>
         <!--글 번호-->
         <input type='hidden' name='boardID' id='boardID'>
     </form>";

@@ -69,8 +69,27 @@ if(isset($_POST['commentText'])){
 }
 // 전달 받은 댓글의 값이 없는 경우, 즉 댓글 작성이 아닌 경우 0으로 초기화 합니다.
 else
-    $commentText = 0;
+    $commentText = NULL;
 
+// DB에 저장되어 있는 댓글의 글번호를 받습니다.
+if(isset($_POST['commentBoardID'])){
+    $commentBoardID = $_POST['commentBoardID'];
+}
+else
+    $commentBoardID = NULL;
+
+// 댓글의 update 인지 여부를 체크하는 값
+if(isset($_POST['commentUpdateCheck'])){
+    $commentUpdateCheck = $_POST['commentUpdateCheck'];
+
+    // 자료형을 int로 변경합니다.
+    settype($commentUpdateCheck, "integer");
+}
+else
+    $commentUpdateCheck = 0;
+
+// 댓글 update 또는 delete일 경우 원래 페이지로 이동하는데 이용되는 값
+$commentValuePageMove = NULL;
 
 //MySQL 서버 주소
 define("HOST","localhost");
@@ -96,33 +115,84 @@ if($connect){
                VALUES('$userID','$userGrade' , '$titleText', '$contentsText', 0, now())";
     }
     // 글번호를 나타내는 $boardID의 값이 0이 아니라는 것은 수정이라는 의미이므로 UPDATE를 실행합니다.
-    else if($boardID != 0 && $deleteCheck == 0){
+    else if($boardID != 0 && $deleteCheck == 0 && $commentText == NULL){
         $insertORUpdateORDeleteSQL =
             "UPDATE $tableName
             SET title = '$titleText', contents = '$contentsText', reg_date = now()
             WHERE board_id = $boardID";
     }
     // 삭제 작업, 삭제 작업 -> 1, 삭제 작업이 아니면 -> 0
-    else if($deleteCheck != 0){
+    // $commentText의 값이 0이라는 것은 댓글은 아니라는 것이다.
+    else if($deleteCheck != 0 && $commentText == NULL){
         // 지정한 글번호의 글을 삭제하는 SQL문
         $insertORUpdateORDeleteSQL =
-            "DELETE FROM $tableName WHERE board_id = $boardID";
+            "DELETE FROM $tableName WHERE board_id = $boardID OR board_pid = $boardID";
     }
-    //
-    else if($boardID != 0 && $commentText){
+    // 댓글 값인 경우 INSERT
+    else if($commentText != NULL && $boardID != 0 && $deleteCheck == 0 && $commentUpdateCheck == 0){
+        // DB에 새 댓글을 저장하는 insert문
+        $insertORUpdateORDeleteSQL =
+            "INSERT INTO $tableName(board_pid, user_id, user_grade, contents, hits, reg_date)
+               VALUES('$boardID', '$userID', '$userGrade', '$commentText', 0, now())";
+    }
+    // 댓글 값인 경우 UPDATE
+    else if($commentText != NULL && $boardID != 0 && $deleteCheck == 0){
+        $insertORUpdateORDeleteSQL =
+            "UPDATE $tableName
+            SET contents = '$commentText', reg_date = now()
+            WHERE board_pid = $boardID AND board_id = $commentBoardID";
 
+        $commentValuePageMove = 1;
+    }
+    // 댓글 값인 경우 DELETE
+    else if($commentText != NULL && $deleteCheck != 0){
+        $insertORUpdateORDeleteSQL =
+            "DELETE FROM $tableName 
+             WHERE board_pid = $boardID AND board_id = $commentBoardID";
+
+        $commentValuePageMove = 1;
     }
 
     // 추가, 수정, 삭제 중 지정된 SQL문을 실행합니다.
     $startQuery = mysqli_query($connect, $insertORUpdateORDeleteSQL);
 
+    // 댓글 관련 insert 작업인 경우
+    if($commentText != NULL && $deleteCheck == 0){
+        // DB에서 해당 글의 board_id와 같은 board_pid를 가진 값의
+        // 유저 아이디, 회원 등급, 내용, 날짜를 SELECT하는 SQL문
+        $commentSelectSQL =
+            "SELECT board_id, user_id, user_grade, contents, reg_date
+             FROM $tableName 
+             WHERE board_pid = $boardID AND board_id = $commentBoardID";
+
+        // 이 글의 댓글에 해당하는 글의 정보를 SELECT하는 SQL문을 실행합니다.
+        $commentSelectQuery = mysqli_query($connect, $commentSelectSQL);
+
+        $commentInfo = mysqli_fetch_array($commentSelectQuery);
+
+        // 문자열에 존재하는 태그를 제거합니다.
+        $commentInfo[3] = strip_tags($commentInfo[3]);
+
+        echo "$commentInfo[0]_$commentInfo[1]_$commentInfo[2]_$commentInfo[3]_$commentInfo[4]";
+    }
+
     // DB 접속을 종료합니다.
     mysqli_close($connect);
 
-    // 목록페이지로 이동합니다.
-    echo ("<script>
+    // 댓글 관련 DB 작업이 아닌 경우 목록페이지로 이동합니다.
+    if($commentText == NULL){
+        // 목록페이지로 이동합니다.
+        echo ("<script>
                 window.location.href = 'listPage.php'; 
             </script>");
+    }
+    // 댓글 update 또는 delete일 경우 원래 페이지로 이동
+    else if($commentText != NULL && $commentValuePageMove != NULL){
+        // 목록페이지로 이동합니다.
+        echo ("<script>
+                window.location.href = 'updateAndDeletePage.php?boardID=$boardID'; 
+            </script>");
+    }
 }
 // DB 접속에 실패할 경우 else문 실행
 else {

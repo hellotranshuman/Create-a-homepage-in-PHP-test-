@@ -70,12 +70,15 @@
             alert("제목이 없습니다!!");
         }
     }
+    /********************************************* writeOk()함수 끝 *********************************************/
 
     // 작성 한 글을 취소하는 함수
     function writeCancel() {
         document.getElementById("buttonChoice").action = "listPage.php";
         document.getElementById("buttonChoice").submit();
     }
+    /********************************************* writeCancel()함수 끝 *********************************************/
+
 </script>
 </body>
 </html>
